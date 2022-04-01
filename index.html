@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta
+      name="viewport"
+      content="initial-scale=1.0, user-scalable=no, width=device-width"
+    />
+    <title>COVID-19 Shanghai Map</title>
+    <link
+      rel="stylesheet"
+      href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css"
+    />
+    <style>
+      html,
+      body,
+      #container {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+      }
+
+      .amap-info-window {
+        width: 150px;
+        background: #fff;
+        border-radius: 3px;
+        padding: 3px 7px;
+        box-shadow: 0 2px 6px 0 rgba(114, 124, 245, 0.5);
+        position: relative;
+      }
+      .amap-info-sharp {
+        position: absolute;
+        top: 21px;
+        bottom: 0;
+        left: 50%;
+        margin-left: -8px;
+        border-left: 8px solid transparent;
+        border-right: 8px solid transparent;
+        border-top: 8px solid #fff;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="container"></div>
+
+    <script
+      type="text/javascript"
+      src="https://webapi.amap.com/maps?v=2.0&key=9c3754e6c228138b3add3a0f5e40728d&plugin=AMap.Geocoder"
+    ></script>
+    <script type="text/javascript">
+      // 设置一个图标对象
+      var icon = {
+        // 图标类型，现阶段只支持 image 类型
+        type: 'image',
+        // 图片 url
+        image: 'https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png',
+        // 图片尺寸
+        size: [19, 31],
+        // 图片相对 position 的锚点，默认为 bottom-center
+        anchor: 'center',
+      }
+
+      var map = new AMap.Map('container', {
+        zoom: 11,
+        center: [121.4737, 31.2304],
+        resizeEnable: true,
+        showIndoorMap: false,
+      })
+      // 定位控件
+      AMap.plugin('AMap.Geolocation', function () {
+        var geolocation = new AMap.Geolocation({
+          enableHighAccuracy: true, //使用高精度定位
+          buttonPosition: 'LT', //定位按钮的停靠位置
+          buttonOffset: new AMap.Pixel(280, 10), //定位按钮与设置的停靠位置的偏移量
+          zoomToAccuracy: true, //定位成功后是否自动调整地图视野到定位点
+        })
+        map.addControl(geolocation)
+      })
+      var markers = []
+      var layer = new AMap.LabelsLayer({
+        zooms: [3, 20],
+        zIndex: 1000,
+        collision: false,
+        allowCollision: false,
+      })
+      layer.add(markers)
+      // 图层添加到地图
+      map.add(layer)
+
+      fetch('https://tienzhao.github.io/covid-shanghai/positions_new.json')
+        .then((response) => response.json())
+        .then((data) => {
+          // const
+
+          for (const property in data) {
+            const item = data[property]
+            console.log(item.lat, item.lng, item.add)
+            const labelItem = {
+              name: item.label,
+              position: [item.lng, item.lat],
+              zooms: [10, 20],
+              opacity: 1,
+              zIndex: 12,
+              fold: true,
+              icon,
+            }
+            const labelMarker = new AMap.LabelMarker(labelItem)
+
+            // 给marker绑定事件
+            labelMarker.on('mouseover', function (e) {
+              console.log(e)
+              var position = e.data.data && e.data.data.position
+
+              if (position) {
+                normalMarker.setContent(
+                  '<div class="amap-info-window">' +
+                    item.label +
+                    '<div class="amap-info-sharp"></div>' +
+                    '</div>'
+                )
+                normalMarker.setPosition(position)
+                map.add(normalMarker)
+              }
+            })
+
+            labelMarker.on('mouseout', function () {
+              map.remove(normalMarker)
+            })
+
+            markers.push(labelMarker)
+          }
+
+          // 将 marker 添加到图层
+          layer.add(markers)
+        })
+
+      // 普通点
+      var normalMarker = new AMap.Marker({
+        anchor: 'bottom-center',
+        offset: [0, -15],
+      })
+
+      map.setFitView(null, false, [100, 150, 10, 10])
+    </script>
+  </body>
+</html>
