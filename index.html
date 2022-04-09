@@ -96,7 +96,6 @@
 
           for (const property in data) {
             const item = data[property]
-            console.log(item.lat, item.lng, item.add)
             const labelItem = {
               name: item.label,
               position: [item.lng, item.lat],
@@ -108,9 +107,7 @@
             }
             const labelMarker = new AMap.LabelMarker(labelItem)
 
-            // 给marker绑定事件
-            labelMarker.on('mouseover', function (e) {
-              console.log(e)
+            function showAddress (e) {
               var position = e.data.data && e.data.data.position
 
               if (position) {
@@ -123,11 +120,24 @@
                 normalMarker.setPosition(position)
                 map.add(normalMarker)
               }
+            }
+
+            // 给marker绑定事件
+            labelMarker.on('mouseover', function (e) {
+              showAddress(e)
+            })
+
+            labelMarker.on('click', function (e) {
+              showAddress(e)
             })
 
             labelMarker.on('mouseout', function () {
               map.remove(normalMarker)
             })
+
+            map.on('click', function () {
+              map.remove(normalMarker)
+            });
 
             markers.push(labelMarker)
           }
